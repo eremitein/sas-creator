@@ -14,7 +14,7 @@ origin="$(dirname "$origin")"
 targetArch=64
 [ "$1" == 32 ] && targetArch=32
 
-[ -z "$ANDROID_BUILD_TOP" ] && ANDROID_BUILD_TOP=/build2/AOSP-11.0/
+[ -z "$ANDROID_BUILD_TOP" ] && ANDROID_BUILD_TOP=.
 if [ "$targetArch" == 32 ];then
     srcFile="$ANDROID_BUILD_TOP/out/target/product/phhgsi_arm_ab/system.img"
 else
@@ -34,8 +34,8 @@ simg2img "$srcFile" s.img || cp "$srcFile" s.img
 rm -Rf tmp
 mkdir -p d tmp
 e2fsck -y -f s.img
-resize2fs s.img 3500M
-e2fsck -E unshare_blocks -y -f s.img
+resize2fs s.img 3300M
+#e2fsck -E unshare_blocks -y -f s.img
 mount -o loop,rw s.img d
 (
 cd d
@@ -52,6 +52,11 @@ xattr -ws security.selinux u:object_r:adbd_exec:s0 bin/adbd
 rm -Rf system_ext/apex/com.android.vndk.v29
 rm -Rf apex/*.apex
 rm -Rf system_ext/apex/*.apex
+
+sed -i 's/_bvN/_avN/g;s/_bgN/_agN/g;s/_boN/_aoN/g' build.prop
+sed -i 's/_bvS/_avS/g;s/_bgS/_agS/g;s/_boS/_aoS/g' build.prop
+sed -i 's/_bvZ/_avZ/g;s/_bgZ/_agZ/g;s/_boZ/_aoZ/g' build.prop
+chmod 600 build.prop && xattr -w security.selinux u:object_r:system_file:s0 build.prop
 
 sed -i \
     -e '/ro.radio.noril/d' \
@@ -183,7 +188,6 @@ done
 sed -i 's/readproc//g' etc/init/llkd-debuggable.rc etc/init/llkd.rc
 xattr -w security.selinux u:object_r:sepolicy_file:s0 etc/init/llkd-debuggable.rc etc/init/llkd.rc
 
-
 sed -i 's/v27/v26/g' system_ext/apex/com.android.vndk.v26/apex_manifest.pb
 xattr -w security.selinux u:object_r:system_file:s0 system_ext/apex/com.android.vndk.v26/apex_manifest.pb
 
@@ -207,12 +211,11 @@ ln -s /apex/com.android.vndk.v26/lib/ lib/vndk-26
 xattr -sw security.selinux u:object_r:system_lib_file:s0 lib/vndk-26
 
 if [ -d lib64 ];then
-ln -s /apex/com.android.vndk.v26/lib64/ lib64/vndk-sp-26
-xattr -sw security.selinux u:object_r:system_lib_file:s0 lib64/vndk-sp-26
-ln -s /apex/com.android.vndk.v26/lib64/ lib64/vndk-26
-xattr -sw security.selinux u:object_r:system_lib_file:s0 lib64/vndk-26
+    ln -s /apex/com.android.vndk.v26/lib64/ lib64/vndk-sp-26
+    xattr -sw security.selinux u:object_r:system_lib_file:s0 lib64/vndk-sp-26
+    ln -s /apex/com.android.vndk.v26/lib/ lib64/vndk-26
+    xattr -sw security.selinux u:object_r:system_lib_file:s0 lib64/vndk-26
 fi
-
 )
 sleep 1
 
@@ -220,3 +223,11 @@ umount d
 
 e2fsck -f -y s.img || true
 resize2fs -M s.img
+if [ "$targetArch" == 32 ]; then
+#    img2simg s.img $ANDROID_BUILD_TOP/out/target/product/phhgsi_arm_a/system-aonly.img
+    mv s.img $ANDROID_BUILD_TOP/out/target/product/phhgsi_arm_a/system-aonly.img
+else
+#    img2simg s.img $ANDROID_BUILD_TOP/out/target/product/phhgsi_arm64_a/system-aonly.img
+    mv s.img $ANDROID_BUILD_TOP/out/target/product/phhgsi_arm64_a/system-aonly.img
+fi
+echo ":: DONE ::"
