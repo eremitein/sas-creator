@@ -41,7 +41,7 @@ resize2fs s.img 3100M
 mount -o loop,rw s.img d
 (
 cd d
-for vndk in 28 29;do
+for vndk in 27 28;do
     for arch in 32 64;do
         d="$origin/vendor_vndk/vndk-${vndk}-arm${arch}"
         [ ! -d "$d" ] && continue
@@ -57,7 +57,7 @@ for vndk in 28 29;do
         mv -f v system/system_ext/apex/com.android.vndk.v${vndk}/etc/vndkcore.libraries.${vndk}.txt
         xattr -w security.selinux u:object_r:system_file:s0 system/system_ext/apex/com.android.vndk.v${vndk}/etc/vndkcore.libraries.${vndk}.txt
 
-        grep -v -e libgui.so -e libft2.so system/system_ext/apex/com.android.vndk.v${vndk}/etc/vndkprivate.libraries.${vndk}.txt > v
+        grep -v -e libgui.so -e libft2.so system/system_ext/apex/com.android.vndk.v${vndk}/etc/vndkprivate.libraries.${vndk}.txt > v ||true
         mv -f v system/system_ext/apex/com.android.vndk.v${vndk}/etc/vndkprivate.libraries.${vndk}.txt
         xattr -w security.selinux u:object_r:system_file:s0 system/system_ext/apex/com.android.vndk.v${vndk}/etc/vndkprivate.libraries.${vndk}.txt
     done
